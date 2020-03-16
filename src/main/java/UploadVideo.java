@@ -1,6 +1,5 @@
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -15,7 +14,9 @@ import java.io.IOException;
 import java.util.List;
 
 public class UploadVideo {
-    public static void main(String[] args) throws IOException {
+
+    public void upload()
+    {
         Regions clientRegion = Regions.US_EAST_1;
         String bucketName = "ccfoebucket";
         String fileObjKeyName = "screenshot";
@@ -70,4 +71,5 @@ public class UploadVideo {
             e.printStackTrace();
         }
     }
+
 }
