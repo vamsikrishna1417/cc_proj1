@@ -6,15 +6,26 @@ import com.amazonaws.services.sqs.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class SqsHandler {
+    static {
+        // Your accesskey and secretkey
+        AWS_CREDENTIALS = new BasicAWSCredentials(
+                "ASIA3HIKMVVQNLLAURHS",
+                "JSuu7yX706QsioLEhGUzHpDBn1/0IsQEemdr6ecU"
+        );
+    }
     private AmazonSQS sqs;
     private String sqsName;
     private String sqsUrl;
 
     public SqsHandler(String name) throws AmazonServiceException, SdkClientException
     {
-        sqs = AmazonSQSClientBuilder.defaultClient();
+        sqs = AmazonSQSClientBuilder.standard()
+                .withCredentials(new AWSStaticCredentialsProvider(AWS_CREDENTIALS))
+                .withRegion(Regions.US_EAST_1)
+                .build();
         sqsName = name;
         sqsUrl = sqs.getQueueUrl(sqsName).getQueueUrl();
         final SetQueueAttributesRequest setQueueAttributesRequest = new SetQueueAttributesRequest()
@@ -23,15 +34,26 @@ public class SqsHandler {
         sqs.setQueueAttributes(setQueueAttributesRequest);
     }
 
-    public void SendMessage(String message, String groupid) throws AmazonServiceException, SdkClientException
+    public CreateQueueResult createQueue(String queueName, AmazonSQS sqs){
+        return sqs.createQueue(queueName);
+    }
+
+    public void SendMessage(String message, String groupid, int delayInSeconds) throws AmazonServiceException, SdkClientException
     {
         SendMessageRequest send_msg_request = new SendMessageRequest()
                 .withQueueUrl(sqsUrl)
-                .withMessageBody(message);
+                .withMessageBody(message)
+                .withDelaySeconds(delayInSeconds);
 
         send_msg_request.setMessageGroupId(groupid);
                 //.withDelaySeconds(5);
         sqs.sendMessage(send_msg_request);
+    }
+
+    public void deleteMessage(Message message){
+        String messageReciptHandle = message.getReceiptHandle();
+        DeleteMessageRequest deleteRequest = new DeleteMessageRequest(sqsUrl, messageReciptHandle);
+        sqs.deleteMessage(deleteRequest);
     }
 
     public void SendBatchMessage(String[] message) throws AmazonServiceException, SdkClientException
@@ -49,24 +71,35 @@ public class SqsHandler {
         sqs.sendMessageBatch(send_batch_request);
     }
 
-    public List<String> ReceiveMessage() throws AmazonServiceException, SdkClientException
+    public Message ReceiveMessage() throws AmazonServiceException, SdkClientException
     {
         List<String> messagelist = new ArrayList<>();
         final ReceiveMessageRequest receive_request = new ReceiveMessageRequest()
             .withQueueUrl(sqsUrl)
+            .withMaxNumberOfMessages(1)
             .withWaitTimeSeconds(20);
-        List<Message> messages = sqs.receiveMessage(receive_request).getMessages();
-
+        List<Message> messagesList = sqs.receiveMessage(receive_request).getMessages();
+        if(messagesList.isEmpty())
+            return null;
         // Delete messages from sqs
-        for (Message m : messages) {
-            sqs.deleteMessage(sqsUrl, m.getReceiptHandle());
-        }
+        // for (Message m : messages) {
+        //     sqs.deleteMessage(sqsUrl, m.getReceiptHandle());
+        // }
 
-        for(Message m: messages)
-        {
-            messagelist.add(m.getBody());
-        }
+        // for(Message m: messages)
+        // {
+        //     messagelist.add(m.getBody());
+        // }
 
-        return messagelist;
+        return messagesList.get(0);
+    }
+
+    public int getApproximateMessageCount(){
+        List<String> attributesNamesList = new ArrayList<>();
+        attributesNamesList.add("ApproxiamteNumberOfMessages");
+        GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest(sqsUrl, attributesNamesList);
+        Map<String, String> map = sqs.getQueueAttributes(getQueueAttributesRequest).getAttributes();
+        Integer messageCount = Integer.valueOf(map.get("ApproxiamteNumberOfMessages"));
+        return messageCount;
     }
 }

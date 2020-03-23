@@ -19,7 +19,7 @@ public class RaspiClient {
             int ind = filepath.lastIndexOf('\\');
             String filename = filepath.substring(ind + 1);
 
-            sqhandle.SendMessage(filename, "uploadvid");
+            sqhandle.SendMessage(filename, "uploadvid",1);
         }
         catch (AmazonServiceException e)
         {
