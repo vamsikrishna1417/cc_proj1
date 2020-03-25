@@ -35,17 +35,17 @@ public class EC2Handler {
 
     public void StartInstance() throws AmazonServiceException, SdkClientException
     {
-        StartInstancesRequest request = new StartInstancesRequest()
-                .withInstanceIds(InstanceIDs[0]);
-        ec2.startInstances(request);
+//        StartInstancesRequest request = new StartInstancesRequest()
+//                .withInstanceIds(InstanceIDs[0]);
+//        ec2.startInstances(request);
 
     }
 
     public void StopInstance() throws AmazonServiceException, SdkClientException
     {
-        StopInstancesRequest request = new StopInstancesRequest()
-                .withInstanceIds(InstanceIDs[0]);
-
-        ec2.stopInstances(request);
+//        StopInstancesRequest request = new StopInstancesRequest()
+//                .withInstanceIds(InstanceIDs[0]);
+//
+//        ec2.stopInstances(request);
     }
 }

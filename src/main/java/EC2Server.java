@@ -22,20 +22,22 @@ import com.amazonaws.services.ec2.model.TagSpecification;
 import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.amazonaws.services.ec2.model.DescribeInstanceStatusRequest;
 import com.amazonaws.services.ec2.model.DescribeInstanceStatusResult;
+import com.amazonaws.services.ec2.model.InstanceState;
 import com.amazonaws.services.ec2.model.InstanceStateName;
 import com.amazonaws.services.ec2.model.InstanceStatus;
+import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 
 
 import java.util.List;
 
 public class EC2Server {
-	static {
+//	static {
         // Your accesskey and secretkey
-        AWS_CREDENTIALS = new BasicAWSCredentials(
+    BasicAWSCredentials AWS_CREDENTIALS = new BasicAWSCredentials(
                 "ASIA3HIKMVVQNLLAURHS",
                 "JSuu7yX706QsioLEhGUzHpDBn1/0IsQEemdr6ecU"
         );
-    }
+//    }
     // private List<AmazonEC2> ec2clientList;
     private AmazonEC2 ec2Client;
     private String ami_id;
@@ -59,7 +61,8 @@ public class EC2Server {
     }
 
     public int startInstances(int count, int minCount){
-    	return CreateInstance(ec2Client, count, minCount);
+
+        return CreateInstance(ec2Client, count, minCount);
     }
 
     public static void main(String[] args)
@@ -71,14 +74,14 @@ public class EC2Server {
             SqsHandler sqhandle = new SqsHandler("input.fifo");
             S3Handler s3handle = new S3Handler(region, "ccfoebucket");
 
-            messagelist = sqhandle.ReceiveMessage();
-            System.out.println(messagelist.toString());
+//            messagelist = sqhandle.ReceiveMessage();
+//            System.out.println(messagelist.toString());
 
             // For each message received start instance
-            for(String m: messagelist)
-            {
-
-            }
+//            for(String m: messagelist)
+//            {
+//
+//            }
 
         }
         catch (AmazonServiceException e)
@@ -99,7 +102,7 @@ public class EC2Server {
     	return ec2;
     }
 
-    public int CreateInstance(AmazonEC2 ec2Client, int maxNumberInstance, int count, String imageId, String key_pair) throws AmazonServiceException, SdkClientException
+    public int CreateInstance(AmazonEC2 ec2Client, int maxNumberInstance, int count) throws AmazonServiceException, SdkClientException
     {
     	int minInstance = maxNumberInstance -1;
     	int maxInstance = maxNumberInstance;
@@ -119,8 +122,8 @@ public class EC2Server {
     	tagSpecsList.add(tagSpec);
 
         RunInstancesRequest run_request = new RunInstancesRequest()
-                .withImageId(imageId)
-                .withInstanceType(InstanceType.T2Micro)
+                .withImageId(ami_id)
+                .withInstanceType("t2.micro")
                 .withMaxCount(maxInstance)
                 .withMinCount(minInstance)
                 .withKeyName(key_pair);
@@ -143,22 +146,22 @@ public class EC2Server {
         return count;
     }
 
-    public void startInstance(String instanceId, AmazonEC2 ec2Client){
+    public void startInstance(String instanceId){
     	StartInstancesRequest startRequest = new StartInstancesRequest().withInstanceIds(instanceId);
     	ec2Client.startInstances(startRequest);
     }
 
-    public void stopInstance(String instanceId, AmazonEC2 ec2Client){
+    public void stopInstance(String instanceId){
     	StopInstancesRequest stopRequest = new StopInstancesRequest().withInstanceIds(instanceId);
     	ec2Client.stopInstances(stopRequest);
     }
 
-    public void terminateInstance(String instanceId, AmazonEC2 ec2Client){
+    public void terminateInstance(String instanceId){
     	TerminateInstancesRequest terminateRequest = new TerminateInstancesRequest().withInstanceIds(instanceId);
-    	ec2Client.terminateInstance(terminateRequest);
+    	ec2Client.terminateInstances(terminateRequest);
     }
 
-    public DescribeInstanceStatusResult describeInstanceStatus(DescribeInstanceStatusRequest instanceRequest, AmazonEC2 ec2Client){
+    public DescribeInstanceStatusResult describeInstanceStatus(DescribeInstanceStatusRequest instanceRequest){
     	return ec2Client.describeInstanceStatus(instanceRequest);
     }
 
@@ -166,10 +169,10 @@ public class EC2Server {
     	DescribeInstanceStatusRequest describeRequest = new DescribeInstanceStatusRequest();
     	describeRequest.setIncludeAllInstances(true);
     	DescribeInstanceStatusResult describeInstances = describeInstanceStatus(describeRequest);
-    	List<InstanceStatus> instanceStatusList = describeInstances.getInstanceState();
+    	List<InstanceStatus> instanceStatusList = describeInstances.getInstanceStatuses();
     	int liveInstancesCount=0;
     	for(InstanceStatus instanceStatus: instanceStatusList){
-    		InstanceStatus instanceState = instanceStatus.getInstanceState();
+    		InstanceState instanceState = instanceStatus.getInstanceState();
     		if(InstanceStateName.Running.toString().equals(instanceState.getName())){
     			liveInstancesCount++;
     		}

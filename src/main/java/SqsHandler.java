@@ -2,6 +2,9 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.services.sqs.model.*;
 
 import java.util.ArrayList;
@@ -9,13 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 public class SqsHandler {
-    static {
+//    static {
         // Your accesskey and secretkey
-        AWS_CREDENTIALS = new BasicAWSCredentials(
+    BasicAWSCredentials AWS_CREDENTIALS = new BasicAWSCredentials(
                 "ASIA3HIKMVVQNLLAURHS",
                 "JSuu7yX706QsioLEhGUzHpDBn1/0IsQEemdr6ecU"
         );
-    }
+//    }
     private AmazonSQS sqs;
     private String sqsName;
     private String sqsUrl;
