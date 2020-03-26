@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -34,20 +35,21 @@ public class EC2Server {
 //	static {
         // Your accesskey and secretkey
     BasicAWSCredentials AWS_CREDENTIALS = new BasicAWSCredentials(
-                "ASIA3HIKMVVQNLLAURHS",
-                "JSuu7yX706QsioLEhGUzHpDBn1/0IsQEemdr6ecU"
+                "ASIA3HIKMVVQOB5CEPXJ",
+                "NIoJ23tt/FGNzSJgDg6L5Oj3gNmVk4jnzoZ7a2ny"
         );
 //    }
     // private List<AmazonEC2> ec2clientList;
     private AmazonEC2 ec2Client;
     private String ami_id;
     private String key_pair;
-    private List<String> instanceIDs;
+    private static LinkedList<String> instanceIDs;
     public EC2Server()
     {
     	ec2Client = createEC2Client();
     	ami_id = "ami-0903fd482d7208724";
         key_pair = "ccproj";
+		instanceIDs = new LinkedList<>();
     	// int numofInstances = CreateInstance(ec2Client, 3, -1, ami_id, key_pair);
         // Create 2 instances
         // for(int i=1;i<3;i++){
@@ -65,38 +67,58 @@ public class EC2Server {
         return CreateInstance(ec2Client, count, minCount);
     }
 
+    public static String getInstanceId(){
+    	if(!instanceIDs.isEmpty()){
+    		return instanceIDs.poll();
+		}
+    	return "";
+	}
+
+	public static int getCountOfInstances(){
+    	return instanceIDs.size();
+	}
+
+	public static void addInstanceId(String instanceId){
+    	instanceIDs.addLast(instanceId);
+	}
+
     public static void main(String[] args)
     {
-        Regions region = Regions.US_EAST_1;
-        List<String> messagelist;
-        try
-        {
-            SqsHandler sqhandle = new SqsHandler("input.fifo");
-            S3Handler s3handle = new S3Handler(region, "ccfoebucket");
-
-//            messagelist = sqhandle.ReceiveMessage();
-//            System.out.println(messagelist.toString());
-
-            // For each message received start instance
-//            for(String m: messagelist)
-//            {
+        EC2Server server = new EC2Server();
+//        server.startInstance("i-0c79eea5149bc8cd9");
+//        server.stopInstance("i-08102f449e453d1d4");
+//        int count = server.startInstances(3,1);
+//        System.out.println("Count: "+count);
+//        Regions region = Regions.US_EAST_1;
+//        List<String> messagelist;
+//        try
+//        {
+//            SqsHandler sqhandle = new SqsHandler("input.fifo");
+//            S3Handler s3handle = new S3Handler(region, "ccfoebucket");
 //
-//            }
-
-        }
-        catch (AmazonServiceException e)
-        {
-            e.printStackTrace();
-        }
-        catch (SdkClientException e)
-        {
-            e.printStackTrace();
-        }
+////            messagelist = sqhandle.ReceiveMessage();
+////            System.out.println(messagelist.toString());
+//
+//            // For each message received start instance
+////            for(String m: messagelist)
+////            {
+////
+////            }
+//
+//        }
+//        catch (AmazonServiceException e)
+//        {
+//            e.printStackTrace();
+//        {
+//        }
+//        catch (SdkClientException e)
+//            e.printStackTrace();
+//        }
     }
 
     public AmazonEC2 createEC2Client(){
     	AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard()
-    					.withCredentials(new AWSStaticCredentialsProvider(AWS_CREDENTIALS))
+//    					.withCredentials(new AWSStaticCredentialsProvider(AWS_CREDENTIALS))
     					.withRegion(Regions.US_EAST_1)
     					.build();
     	return ec2;
@@ -130,9 +152,14 @@ public class EC2Server {
         RunInstancesResult run_response = null;
         try{
         	run_response = ec2Client.runInstances(run_request);
+			String instanceId = run_response.getReservation().getInstances().get(0).getInstanceId();
+			instanceIDs.addLast(instanceId);
+			stopInstance(instanceId);
         } catch(AmazonEC2Exception amzec2Exp){
+            System.out.println("AmazonEC2Exception ");
         	return count;
         } catch(Exception e){
+            System.out.println("General Exception ");
         	return count;
         }
         // RunInstancesResult run_response = ec2Client.runInstances(run_request);
@@ -143,7 +170,7 @@ public class EC2Server {
         //         .withResources(instanceId)
         //         .withTags(new Tag("ec2client"+number, "ec2client"+number));
         // ec2Client.createTags(createTagsRequest);
-        return count;
+        return maxNumberInstance;
     }
 
     public void startInstance(String instanceId){

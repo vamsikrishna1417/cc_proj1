@@ -12,11 +12,27 @@ public class LoadBalancer{
 				if(maxLimitInstances>0){
 					int messagesToBeServed = messageCount - ec2ClientInstances;
 					if(messagesToBeServed >= maxLimitInstances){
-						count = ec2Server.startInstances(maxLimitInstances, count);
+//						count = ec2Server.startInstances(maxLimitInstances, count);
+						while(EC2Server.getCountOfInstances() != 0){
+							String instanceId = EC2Server.getInstanceId();
+							ec2Server.startInstance(instanceId);
+						}
 					}else{
-						count = ec2Server.startInstances(messagesToBeServed, count);
+						if(messagesToBeServed>= EC2Server.getCountOfInstances()){
+							while(EC2Server.getCountOfInstances() != 0){
+								String instanceId = EC2Server.getInstanceId();
+								ec2Server.startInstance(instanceId);
+							}
+						}else{
+							while(messagesToBeServed != 0){
+								String instanceId = EC2Server.getInstanceId();
+								ec2Server.startInstance(instanceId);
+								messagesToBeServed--;
+							}
+						}
+//						count = ec2Server.startInstances(messagesToBeServed, count);
 					}
-					count++;
+//					count++;
 				}
 			}
 			try{
