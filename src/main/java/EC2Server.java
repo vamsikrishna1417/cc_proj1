@@ -84,8 +84,17 @@ public class EC2Server {
 
     public static void main(String[] args)
     {
-        EC2Server server = new EC2Server();
-//        server.startInstance("i-0c79eea5149bc8cd9");
+    	try {
+			EC2Server server = new EC2Server();
+			AmazonEC2 ec2 = server.createEC2Client();
+			//server.CreateInstance(ec2, 1, 0);
+			server.startInstance("i-0ef52c42544bf2479");
+		}
+    	catch (AmazonServiceException e)
+		{
+			e.printStackTrace();
+		}
+        //server.startInstance("i-00b179da287023d3c");
 //        server.stopInstance("i-08102f449e453d1d4");
 //        int count = server.startInstances(3,1);
 //        System.out.println("Count: "+count);
@@ -143,12 +152,17 @@ public class EC2Server {
     	tagSpec.setTags(tagList);
     	tagSpecsList.add(tagSpec);
 
+    	List<String> securityGroupId = new ArrayList<>();
+    	securityGroupId.add("sg-0e8845c279230e932");
         RunInstancesRequest run_request = new RunInstancesRequest()
                 .withImageId(ami_id)
                 .withInstanceType("t2.micro")
                 .withMaxCount(maxInstance)
                 .withMinCount(minInstance)
                 .withKeyName(key_pair);
+
+        run_request.setSecurityGroupIds(securityGroupId);
+
         RunInstancesResult run_response = null;
         try{
         	run_response = ec2Client.runInstances(run_request);
@@ -156,10 +170,12 @@ public class EC2Server {
 			instanceIDs.addLast(instanceId);
 			stopInstance(instanceId);
         } catch(AmazonEC2Exception amzec2Exp){
-            System.out.println("AmazonEC2Exception ");
+            //System.out.println("AmazonEC2Exception ");
+			amzec2Exp.printStackTrace();
         	return count;
         } catch(Exception e){
-            System.out.println("General Exception ");
+            //System.out.println("General Exception ");
+			e.printStackTrace();
         	return count;
         }
         // RunInstancesResult run_response = ec2Client.runInstances(run_request);

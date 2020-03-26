@@ -29,7 +29,7 @@ public class EC2Client {
 
             // Run darknet with video as input to darknet
             ProcessBuilder p = new ProcessBuilder()
-                    .command("/home/ubuntu/darknet/darknet", "detector", "demo", "/home/ubuntu/darknet/cfg/coco.data", "/home/ubuntu/darknet/cfg/yolov3-tiny.cfg", "/home/ubuntu/darknet/yolov3-tiny.weights",  "/home/ubuntu/darknet/videos/" + filename)
+                    .command("Xvfb", ":1", "&", "export","DISPLAY=:1",";","/home/ubuntu/darknet/darknet", "detector", "demo", "/home/ubuntu/darknet/cfg/coco.data", "/home/ubuntu/darknet/cfg/yolov3-tiny.cfg", "/home/ubuntu/darknet/yolov3-tiny.weights",  "/home/ubuntu/darknet/videos/" + filename)
                     .redirectOutput(new File("/home/ubuntu/darknet/results/" + filename));
 
             Process process = p.start();
