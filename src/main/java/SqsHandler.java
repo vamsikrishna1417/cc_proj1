@@ -1,5 +1,6 @@
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
+import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -26,7 +27,7 @@ public class SqsHandler {
     public SqsHandler(String name) throws AmazonServiceException, SdkClientException
     {
         sqs = AmazonSQSClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(AWS_CREDENTIALS))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicSessionCredentials("ASIA3HIKMVVQDMRLQ5BT","URYoTx3pH77b/oty0AoktL21YTxQ395NLeQ1vvje","FwoGZXIvYXdzEM3//////////wEaDMW2XNwoB2v171ZkwiK/AaBiSXMDPRk1jFF1roapgdXx8UnFp6tkEhyp06t/+OYcfkXHEGMihiMdnZyKwp/G5VI58UhXixxTUUI+A6ed/a0/jDentSy1XT+2sC6UXkxYzRjVhCnmPdPUySHS+pKNswHXbbYEKWQFAwcvd2SqN2YJ3pxGfTL3cNmjijGMnaSIyDDtqIzIoL9ucFb4sWw59yOtHR1xnVTEVXIMs1Lv9Zuwskc/H81sRLJenvXMicKMEzJm4gJ8NDyo60sUhgdFKKeT+/MFMi3cDRTZFiDWJGtRWDvS+rbm1rMVIOzGAoC6M6zedzlqDkZ8E086ZCmSoZ3K80g=")))
                 .withRegion(Regions.US_EAST_1)
                 .build();
         sqsName = name;

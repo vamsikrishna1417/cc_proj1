@@ -1,9 +1,12 @@
+import com.amazonaws.services.sqs.model.Message;
 
 public class LoadBalancer{
 	SqsHandler sqsHandler = new SqsHandler("inputMessageQueue");
+	SqsHandler ec2InstanceHandler = new SqsHandler("instance.fifo");
 	EC2Server ec2Server;
 	public void scaleInAndOut(){
 		int count=0;
+
 		while(true){
 			int messageCount = sqsHandler.getApproximateMessageCount();
 			int ec2ClientInstances = ec2Server.getNumberOfInstances()-1; //bcoz master is counted as an instance
@@ -11,28 +14,39 @@ public class LoadBalancer{
 				int maxLimitInstances = 19 - ec2ClientInstances;
 				if(maxLimitInstances>0){
 					int messagesToBeServed = messageCount - ec2ClientInstances;
+					int countOfAvailableInstances = ec2InstanceHandler.getApproximateMessageCount();
 					if(messagesToBeServed >= maxLimitInstances){
-//						count = ec2Server.startInstances(maxLimitInstances, count);
-						while(EC2Server.getCountOfInstances() != 0){
-							String instanceId = EC2Server.getInstanceId();
-							ec2Server.startInstance(instanceId);
+						while(countOfAvailableInstances != 0){
+							Message instanceId = ec2InstanceHandler.ReceiveMessage();
+							ec2InstanceHandler.deleteMessage(instanceId);
+							if(instanceId != null){
+								ec2Server.startInstance(instanceId.getBody());
+								countOfAvailableInstances--;
+							}else{
+								break; // No available instances.
+							}
 						}
 					}else{
-						if(messagesToBeServed>= EC2Server.getCountOfInstances()){
-							while(EC2Server.getCountOfInstances() != 0){
-								String instanceId = EC2Server.getInstanceId();
-								ec2Server.startInstance(instanceId);
+						if(messagesToBeServed >= countOfAvailableInstances){
+							while(countOfAvailableInstances != 0){
+								Message instanceId = ec2InstanceHandler.ReceiveMessage();
+								ec2InstanceHandler.deleteMessage(instanceId);
+								if(instanceId != null){
+									ec2Server.startInstance(instanceId.getBody());
+									countOfAvailableInstances--;
+								}else{
+									break; // No available instances
+								}
 							}
 						}else{
 							while(messagesToBeServed != 0){
-								String instanceId = EC2Server.getInstanceId();
-								ec2Server.startInstance(instanceId);
+								Message instanceId = ec2InstanceHandler.ReceiveMessage();
+								ec2InstanceHandler.deleteMessage(instanceId);
+								ec2Server.startInstance(instanceId.getBody());
 								messagesToBeServed--;
 							}
 						}
-//						count = ec2Server.startInstances(messagesToBeServed, count);
 					}
-//					count++;
 				}
 			}
 			try{

@@ -4,11 +4,12 @@ import java.util.List;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
@@ -32,13 +33,12 @@ import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import java.util.List;
 
 public class EC2Server {
-//	static {
-        // Your accesskey and secretkey
-    BasicAWSCredentials AWS_CREDENTIALS = new BasicAWSCredentials(
-                "ASIA3HIKMVVQOB5CEPXJ",
-                "NIoJ23tt/FGNzSJgDg6L5Oj3gNmVk4jnzoZ7a2ny"
-        );
-//    }
+
+	public BasicSessionCredentials basicSessionCredentials(){
+		return new BasicSessionCredentials(
+				"ASIA3HIKMVVQDMRLQ5BT",
+				"URYoTx3pH77b/oty0AoktL21YTxQ395NLeQ1vvje", "FwoGZXIvYXdzEM3//////////wEaDMW2XNwoB2v171ZkwiK/AaBiSXMDPRk1jFF1roapgdXx8UnFp6tkEhyp06t/+OYcfkXHEGMihiMdnZyKwp/G5VI58UhXixxTUUI+A6ed/a0/jDentSy1XT+2sC6UXkxYzRjVhCnmPdPUySHS+pKNswHXbbYEKWQFAwcvd2SqN2YJ3pxGfTL3cNmjijGMnaSIyDDtqIzIoL9ucFb4sWw59yOtHR1xnVTEVXIMs1Lv9Zuwskc/H81sRLJenvXMicKMEzJm4gJ8NDyo60sUhgdFKKeT+/MFMi3cDRTZFiDWJGtRWDvS+rbm1rMVIOzGAoC6M6zedzlqDkZ8E086ZCmSoZ3K80g=");
+	}
     // private List<AmazonEC2> ec2clientList;
     private AmazonEC2 ec2Client;
     private String ami_id;
@@ -62,33 +62,22 @@ public class EC2Server {
 
     }
 
-    public int startInstances(int count, int minCount){
+    public int startInstances(int count, int minCount, SqsHandler handler){
 
-        return CreateInstance(ec2Client, count, minCount);
+        return CreateInstance(count, minCount, handler);
     }
 
-    public static String getInstanceId(){
-    	if(!instanceIDs.isEmpty()){
-    		return instanceIDs.poll();
-		}
-    	return "";
-	}
-
-	public static int getCountOfInstances(){
-    	return instanceIDs.size();
-	}
-
-	public static void addInstanceId(String instanceId){
-    	instanceIDs.addLast(instanceId);
-	}
 
     public static void main(String[] args)
     {
         EC2Server server = new EC2Server();
+        SqsHandler sqsHandler = new SqsHandler("instance.fifo");
 //        server.startInstance("i-0c79eea5149bc8cd9");
 //        server.stopInstance("i-08102f449e453d1d4");
-//        int count = server.startInstances(3,1);
+//        int count = server.startInstances(2,1, sqsHandler);
 //        System.out.println("Count: "+count);
+//		sqsHandler.SendMessage("i-0400fdc340c8957c0", "1", 0);
+//		sqsHandler.SendMessage("i-0472b3ec7814e3335", "1", 0);
 //        Regions region = Regions.US_EAST_1;
 //        List<String> messagelist;
 //        try
@@ -118,13 +107,13 @@ public class EC2Server {
 
     public AmazonEC2 createEC2Client(){
     	AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard()
-//    					.withCredentials(new AWSStaticCredentialsProvider(AWS_CREDENTIALS))
+    					.withCredentials(new AWSStaticCredentialsProvider(new BasicSessionCredentials("ASIA3HIKMVVQDMRLQ5BT","URYoTx3pH77b/oty0AoktL21YTxQ395NLeQ1vvje","FwoGZXIvYXdzEM3//////////wEaDMW2XNwoB2v171ZkwiK/AaBiSXMDPRk1jFF1roapgdXx8UnFp6tkEhyp06t/+OYcfkXHEGMihiMdnZyKwp/G5VI58UhXixxTUUI+A6ed/a0/jDentSy1XT+2sC6UXkxYzRjVhCnmPdPUySHS+pKNswHXbbYEKWQFAwcvd2SqN2YJ3pxGfTL3cNmjijGMnaSIyDDtqIzIoL9ucFb4sWw59yOtHR1xnVTEVXIMs1Lv9Zuwskc/H81sRLJenvXMicKMEzJm4gJ8NDyo60sUhgdFKKeT+/MFMi3cDRTZFiDWJGtRWDvS+rbm1rMVIOzGAoC6M6zedzlqDkZ8E086ZCmSoZ3K80g=")))
     					.withRegion(Regions.US_EAST_1)
     					.build();
     	return ec2;
     }
 
-    public int CreateInstance(AmazonEC2 ec2Client, int maxNumberInstance, int count) throws AmazonServiceException, SdkClientException
+    public int CreateInstance(int maxNumberInstance, int count, SqsHandler sqsHandler) throws AmazonServiceException, SdkClientException
     {
     	int minInstance = maxNumberInstance -1;
     	int maxInstance = maxNumberInstance;
@@ -154,6 +143,7 @@ public class EC2Server {
         	run_response = ec2Client.runInstances(run_request);
 			String instanceId = run_response.getReservation().getInstances().get(0).getInstanceId();
 			instanceIDs.addLast(instanceId);
+			sqsHandler.SendMessage(instanceId, "1", 0);
 			stopInstance(instanceId);
         } catch(AmazonEC2Exception amzec2Exp){
             System.out.println("AmazonEC2Exception ");
