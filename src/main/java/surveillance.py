@@ -55,7 +55,7 @@ def run_darknet():
         print(obj_list)
         darknet =0
         if obj_list is None:
-            obj_list.append("no object detected")
+            obj_list.append("No Object Detected")
         '''
         upload result to S3
         '''

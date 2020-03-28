@@ -1,8 +1,9 @@
 import com.amazonaws.services.sqs.model.Message;
 
 public class LoadBalancer{
-	SqsHandler sqsHandler = new SqsHandler("inputMessageQueue");
-	SqsHandler ec2InstanceHandler = new SqsHandler("instance.fifo");
+	SqsHandler sqsHandler = new SqsHandler("inputMessageQueue", "0");
+	SqsHandler ec2InstanceHandler = new SqsHandler("instance.fifo", "0");
+
 	EC2Server ec2Server;
 	public void scaleInAndOut(){
 		int count=0;
