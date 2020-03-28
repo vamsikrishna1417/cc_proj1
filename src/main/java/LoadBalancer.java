@@ -1,6 +1,6 @@
 
 public class LoadBalancer{
-	SqsHandler sqsHandler = new SqsHandler("inputMessageQueue");
+	SqsHandler sqsHandler = new SqsHandler("inputMessageQueue", "0");
 	EC2Server ec2Server;
 	public void scaleInAndOut(){
 		int count=0;

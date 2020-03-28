@@ -4,6 +4,7 @@ import java.util.List;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
+import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.auth.AWSCredentials;
@@ -86,7 +87,7 @@ public class EC2Server {
     {
     	try {
 			EC2Server server = new EC2Server();
-			AmazonEC2 ec2 = server.createEC2Client();
+			//AmazonEC2 ec2 = server.createEC2Client();
 			//server.CreateInstance(ec2, 1, 0);
 			server.startInstance("i-0ef52c42544bf2479");
 		}
@@ -126,8 +127,15 @@ public class EC2Server {
     }
 
     public AmazonEC2 createEC2Client(){
+
+		BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(
+				"ASIA3HIKMVVQBT3JKNHX",
+				"Ach96l9jsmYGioaCyPu0ajkal28ruUGqND2aUUB2",
+				"FwoGZXIvYXdzEMn//////////wEaDGXzpV8+8oLC9MtVDSK/AdNPaN7kn/PWFtFG01uB+YDr1wf52Q+Ac0kbXn5F/gFOrIInlBXDHqwMoXZUAIDNT40y4avu0QzgUuVusspEQmVQgTRhh96ZpPB5jE5XJrEr2euRGNwJnPjStIjl7V4uIJZyMplP07otPPCwYtcngJ8g2ayGTW8RPflkqTdhsk6NycA9TgN+zahdatd19y5hObJYy5+K56U7cj6hxI5NmhCKshIITflvzgr49CTcoUwPdNGrHVJfIY/KuMqt3bgjKKGf+vMFMi1JK4GHyooez7Ddut08RnHE7Xz9CV+Rix15YYi31Cb2HXjWMJeIfI8s9xDr6ZY=");
+
+
     	AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard()
-//    					.withCredentials(new AWSStaticCredentialsProvider(AWS_CREDENTIALS))
+    					.withCredentials(new AWSStaticCredentialsProvider(sessionCredentials))
     					.withRegion(Regions.US_EAST_1)
     					.build();
     	return ec2;

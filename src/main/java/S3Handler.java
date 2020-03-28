@@ -2,6 +2,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -20,11 +21,12 @@ public class S3Handler {
 
     public S3Handler(Regions region, String name) throws AmazonServiceException, SdkClientException
     {
-        BasicAWSCredentials AWS_CREDENTIALS = new BasicAWSCredentials(Credentials.accessKey, Credentials.secretKey);
+        BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(Credentials.accessKey,
+                Credentials.secretKey, Credentials.sessionKey);
         clientRegion = region; //Regions.US_EAST_1
         bucketName = name; //"ccfoebucket";
         s3Client = AmazonS3ClientBuilder.standard()
-            .withRegion(clientRegion)//.withCredentials(new AWSStaticCredentialsProvider(AWS_CREDENTIALS))
+            .withRegion(clientRegion).withCredentials(new AWSStaticCredentialsProvider(sessionCredentials))
             .build();
     }
 

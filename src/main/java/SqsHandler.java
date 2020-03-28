@@ -1,5 +1,6 @@
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
+import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -23,17 +24,20 @@ public class SqsHandler {
     private String sqsName;
     private String sqsUrl;
 
-    public SqsHandler(String name) throws AmazonServiceException, SdkClientException
+    public SqsHandler(String name, String delaySeconds) throws AmazonServiceException, SdkClientException
     {
+        BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(Credentials.accessKey,
+                Credentials.secretKey, Credentials.sessionKey);
         sqs = AmazonSQSClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(AWS_CREDENTIALS))
+                .withCredentials(new AWSStaticCredentialsProvider(sessionCredentials))
                 .withRegion(Regions.US_EAST_1)
                 .build();
         sqsName = name;
         sqsUrl = sqs.getQueueUrl(sqsName).getQueueUrl();
         final SetQueueAttributesRequest setQueueAttributesRequest = new SetQueueAttributesRequest()
                 .withQueueUrl(sqsUrl)
-                .addAttributesEntry("ReceiveMessageWaitTimeSeconds", "20");
+                .addAttributesEntry("ReceiveMessageWaitTimeSeconds", "20")
+                .addAttributesEntry("DelaySeconds", delaySeconds);
         sqs.setQueueAttributes(setQueueAttributesRequest);
     }
 
@@ -41,14 +45,14 @@ public class SqsHandler {
         return sqs.createQueue(queueName);
     }
 
-    public void SendMessage(String message, String groupid, int delayInSeconds) throws AmazonServiceException, SdkClientException
+    public void SendMessage(String message, String groupID, int delayInSeconds) throws AmazonServiceException, SdkClientException
     {
         SendMessageRequest send_msg_request = new SendMessageRequest()
                 .withQueueUrl(sqsUrl)
-                .withMessageBody(message)
-                .withDelaySeconds(delayInSeconds);
+                .withMessageBody(message);
+                //.withDelaySeconds(delayInSeconds);
 
-        send_msg_request.setMessageGroupId(groupid);
+        send_msg_request.setMessageGroupId(groupID);
                 //.withDelaySeconds(5);
         sqs.sendMessage(send_msg_request);
     }
@@ -80,7 +84,8 @@ public class SqsHandler {
         final ReceiveMessageRequest receive_request = new ReceiveMessageRequest()
             .withQueueUrl(sqsUrl)
             .withMaxNumberOfMessages(1)
-            .withWaitTimeSeconds(20);
+            .withWaitTimeSeconds(5)
+                .withVisibilityTimeout(10);
         List<Message> messagesList = sqs.receiveMessage(receive_request).getMessages();
         if(messagesList.isEmpty())
             return null;

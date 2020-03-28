@@ -1,20 +1,30 @@
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicSessionCredentials;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
 
 public class EC2Handler {
 
-    // private AmazonEC2 ec2;
-    // private String ami_id;
-    // private String key_pair;
-    // private String[] InstanceIDs;
+     private AmazonEC2 ec2;
+     private String ami_id;
+     private String key_pair;
+     private String InstanceID;
+
     public EC2Handler()
     {
-        // ec2 = AmazonEC2ClientBuilder.defaultClient();
-        // ami_id = "ami-0903fd482d7208724";
-        // key_pair = "ccproj";
+
+        ami_id = "ami-0903fd482d7208724";
+        key_pair = "ccproj";
+
+        BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(Credentials.accessKey, Credentials.secretKey, Credentials.sessionKey);
+        ec2 = AmazonEC2ClientBuilder.standard()
+                .withCredentials(new AWSStaticCredentialsProvider(sessionCredentials))
+                .withRegion(Regions.US_EAST_1)
+                .build();
         // InstanceIDs = new String[] {"i-052e0682aa7e279db", " ", " ", " ", " ", " ", " ", " ",
         //         " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "};
 
@@ -41,11 +51,11 @@ public class EC2Handler {
 
     }
 
-    public void StopInstance() throws AmazonServiceException, SdkClientException
+    public void StopInstance(String instanceID) throws AmazonServiceException, SdkClientException
     {
-//        StopInstancesRequest request = new StopInstancesRequest()
-//                .withInstanceIds(InstanceIDs[0]);
-//
-//        ec2.stopInstances(request);
+        StopInstancesRequest request = new StopInstancesRequest()
+                .withInstanceIds(instanceID);
+
+        ec2.stopInstances(request);
     }
 }
