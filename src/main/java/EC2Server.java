@@ -34,22 +34,17 @@ import java.util.List;
 
 public class EC2Server {
 
-	public BasicSessionCredentials basicSessionCredentials(){
-		return new BasicSessionCredentials(
-				"ASIA3HIKMVVQDMRLQ5BT",
-				"URYoTx3pH77b/oty0AoktL21YTxQ395NLeQ1vvje", "FwoGZXIvYXdzEM3//////////wEaDMW2XNwoB2v171ZkwiK/AaBiSXMDPRk1jFF1roapgdXx8UnFp6tkEhyp06t/+OYcfkXHEGMihiMdnZyKwp/G5VI58UhXixxTUUI+A6ed/a0/jDentSy1XT+2sC6UXkxYzRjVhCnmPdPUySHS+pKNswHXbbYEKWQFAwcvd2SqN2YJ3pxGfTL3cNmjijGMnaSIyDDtqIzIoL9ucFb4sWw59yOtHR1xnVTEVXIMs1Lv9Zuwskc/H81sRLJenvXMicKMEzJm4gJ8NDyo60sUhgdFKKeT+/MFMi3cDRTZFiDWJGtRWDvS+rbm1rMVIOzGAoC6M6zedzlqDkZ8E086ZCmSoZ3K80g=");
-	}
     // private List<AmazonEC2> ec2clientList;
     private AmazonEC2 ec2Client;
     private String ami_id;
     private String key_pair;
-    private static LinkedList<String> instanceIDs;
+    private static LinkedList<String> instanceIds;
     public EC2Server()
     {
     	ec2Client = createEC2Client();
     	ami_id = "ami-0903fd482d7208724";
         key_pair = "ccproj";
-		instanceIDs = new LinkedList<>();
+		instanceIds = new LinkedList<>();
     	// int numofInstances = CreateInstance(ec2Client, 3, -1, ami_id, key_pair);
         // Create 2 instances
         // for(int i=1;i<3;i++){
@@ -75,9 +70,15 @@ public class EC2Server {
 //        server.startInstance("i-0c79eea5149bc8cd9");
     	try {
 			EC2Server server = new EC2Server();
-			//AmazonEC2 ec2 = server.createEC2Client();
+//			AmazonEC2 ec2 = server.createEC2Client();
 			//server.CreateInstance(ec2, 1, 0);
 			SqsHandler sqsHandler = new SqsHandler("instance.fifo", "0");
+			int count = server.CreateInstance(2,1, sqsHandler);
+			System.out.println(count);
+//			Thread.sleep(60000);
+//			for(String id: instanceIds){
+//				server.stopInstance(id);
+//			}
 //			server.startInstance("i-0ef52c42544bf2479");
 		}
     	catch (AmazonServiceException e)
@@ -118,12 +119,8 @@ public class EC2Server {
     }
 
     public AmazonEC2 createEC2Client(){
-
-		BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(
-				"ASIA3HIKMVVQBT3JKNHX",
-				"Ach96l9jsmYGioaCyPu0ajkal28ruUGqND2aUUB2",
-				"FwoGZXIvYXdzEMn//////////wEaDGXzpV8+8oLC9MtVDSK/AdNPaN7kn/PWFtFG01uB+YDr1wf52Q+Ac0kbXn5F/gFOrIInlBXDHqwMoXZUAIDNT40y4avu0QzgUuVusspEQmVQgTRhh96ZpPB5jE5XJrEr2euRGNwJnPjStIjl7V4uIJZyMplP07otPPCwYtcngJ8g2ayGTW8RPflkqTdhsk6NycA9TgN+zahdatd19y5hObJYy5+K56U7cj6hxI5NmhCKshIITflvzgr49CTcoUwPdNGrHVJfIY/KuMqt3bgjKKGf+vMFMi1JK4GHyooez7Ddut08RnHE7Xz9CV+Rix15YYi31Cb2HXjWMJeIfI8s9xDr6ZY=");
-
+		BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(Credentials.accessKey,
+				Credentials.secretKey, Credentials.sessionKey);
 
     	AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard()
     					.withCredentials(new AWSStaticCredentialsProvider(sessionCredentials))
@@ -166,9 +163,10 @@ public class EC2Server {
         try{
         	run_response = ec2Client.runInstances(run_request);
 			String instanceId = run_response.getReservation().getInstances().get(0).getInstanceId();
-			instanceIDs.addLast(instanceId);
-			sqsHandler.SendMessage(instanceId, "1", 0);
-			stopInstance(instanceId);
+//			sqsHandler.SendMessage(instanceId, "1", 0);
+//			instanceIds.add(instanceId);
+//			Thread.sleep(35000);
+//			stopInstance(instanceId);
         } catch(AmazonEC2Exception amzec2Exp){
             //System.out.println("AmazonEC2Exception ");
 			amzec2Exp.printStackTrace();
