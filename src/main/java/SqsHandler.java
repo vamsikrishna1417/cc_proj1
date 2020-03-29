@@ -33,7 +33,16 @@ public class SqsHandler {
                 .withRegion(Regions.US_EAST_1)
                 .build();
         sqsName = name;
-        sqsUrl = sqs.getQueueUrl(sqsName).getQueueUrl();
+        try {
+            sqsUrl = sqs.getQueueUrl(sqsName).getQueueUrl();
+        }
+        catch (AmazonSQSException e)
+        {
+            if(e.getErrorCode() == "NonExistentQueue")
+            {
+                sqsUrl = "";
+            }
+        }
         final SetQueueAttributesRequest setQueueAttributesRequest = new SetQueueAttributesRequest()
                 .withQueueUrl(sqsUrl)
                 .addAttributesEntry("ReceiveMessageWaitTimeSeconds", "20")
@@ -41,8 +50,21 @@ public class SqsHandler {
         sqs.setQueueAttributes(setQueueAttributesRequest);
     }
 
-    public CreateQueueResult createQueue(String queueName, AmazonSQS sqs){
-        return sqs.createQueue(queueName);
+    public void createQueue()
+    {
+        try {
+            CreateQueueRequest createQueueRequest = new CreateQueueRequest(sqsName);
+            String queueUrl = sqs.createQueue(createQueueRequest)
+                    .getQueueUrl();
+            System.out.println(queueUrl);
+        }
+        catch (AmazonSQSException e)
+        {
+            if(e.getErrorCode() == "QueueAlreadyExists")
+            {
+                System.out.println(sqsName + " QueueAlreadyExists");
+            }
+        }
     }
 
     public void SendMessage(String message, String groupID, int delayInSeconds) throws AmazonServiceException, SdkClientException

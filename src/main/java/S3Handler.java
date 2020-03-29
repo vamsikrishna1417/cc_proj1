@@ -1,14 +1,11 @@
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.*;
 
 import java.io.*;
 
@@ -30,6 +27,20 @@ public class S3Handler {
             .build();
     }
 
+    public void createBucket() throws AmazonServiceException, SdkClientException
+    {
+         if(!s3Client.doesBucketExistV2(bucketName))
+         {
+                 s3Client.createBucket(new CreateBucketRequest(bucketName));
+                 String bucketLocation = s3Client.getBucketLocation(new GetBucketLocationRequest(bucketName));
+                 System.out.println("Bucket Created in location: " + bucketLocation);
+         }
+         else
+         {
+             System.out.println(bucketName + " Already Exists");
+         }
+
+    }
     public void Upload(String fileName) throws AmazonServiceException, SdkClientException
     {
         int index = fileName.lastIndexOf('/');
