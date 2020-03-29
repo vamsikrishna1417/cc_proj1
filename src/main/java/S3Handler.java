@@ -1,6 +1,7 @@
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
@@ -18,12 +19,13 @@ public class S3Handler {
 
     public S3Handler(Regions region, String name) throws AmazonServiceException, SdkClientException
     {
-        BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(Credentials.accessKey,
-                Credentials.secretKey, Credentials.sessionKey);
+//        BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(Credentials.accessKey,
+//                Credentials.secretKey, Credentials.sessionKey);
+        BasicAWSCredentials awsCredentials = new BasicAWSCredentials(Credentials.accessKey, Credentials.secretKey);
         clientRegion = region; //Regions.US_EAST_1
         bucketName = name; //"ccfoebucket";
         s3Client = AmazonS3ClientBuilder.standard()
-            .withRegion(clientRegion).withCredentials(new AWSStaticCredentialsProvider(sessionCredentials))
+            .withRegion(clientRegion).withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
             .build();
     }
 
@@ -56,7 +58,7 @@ public class S3Handler {
         s3Client.putObject(request);
     }
 
-    public S3Object Download(String keyName, String downloadPath) throws AmazonServiceException, SdkClientException
+    public int Download(String keyName, String downloadPath) throws AmazonServiceException, SdkClientException
     {
         S3Object fullObject;
 
@@ -79,11 +81,17 @@ public class S3Handler {
             writer.close();
             reader.close();
         }
+        catch(AmazonS3Exception e)
+        {
+            if(e.getErrorCode() == "NoSuchKey")
+                return 0;
+        }
         catch (IOException e)
         {
             e.printStackTrace();
+            return 0;
         }
-        return fullObject;
+        return 1;
     }
 
 }

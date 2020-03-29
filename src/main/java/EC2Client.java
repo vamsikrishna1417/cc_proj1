@@ -20,10 +20,10 @@ public class EC2Client {
     public EC2Client()
     {
         Regions region = Regions.US_EAST_1;
-        sqsInputQueue = new SqsHandler("input.fifo", "0");
-        sqsInstanceQueue = new SqsHandler("instance.fifo", "5");
-        s3Input = new S3Handler(region, "ccfoebucket");
-        s3Output = new S3Handler(region, "ccoutputbucket");
+        sqsInputQueue = new SqsHandler("inputqueue");
+        sqsInstanceQueue = new SqsHandler("instancequeue");
+        s3Input = new S3Handler(region, "ccproj1inputbucket");
+        s3Output = new S3Handler(region, "ccproj1outputbucket");
         ec2 = new EC2Handler();
 
         File f = new File("/home/ubuntu/darknet/results_parsed");
@@ -35,9 +35,23 @@ public class EC2Client {
         if (!saveDir.exists())
             saveDir.mkdir();
     }
-    public void downloadVideo(String filename)
-    {
-        s3Input.Download(filename, "/home/ubuntu/darknet/videos/");
+    public int downloadVideo(String filename) throws InterruptedException {
+        int res=0;
+        int retries = 0;
+        while(res == 0 && retries < 2)
+        {
+            res = s3Input.Download(filename, "/home/ubuntu/darknet/videos/");
+            if(res ==0 )
+            {
+                Thread.sleep(5000);
+                System.out.println("Retrying download...");
+            }
+            retries++;
+        }
+
+
+        return res;
+
     }
     public void runDarknet(String filename) throws IOException, InterruptedException
     {
@@ -118,7 +132,7 @@ public class EC2Client {
     public void publishInstanceID()
     {
         String idOfThisInstance = EC2MetadataUtils.getInstanceId();
-        sqsInstanceQueue.SendMessage(idOfThisInstance, "3", 5);
+        sqsInstanceQueue.SendMessage(idOfThisInstance, 5);
     }
     public static void main(String[] args)
     {
@@ -146,7 +160,17 @@ public class EC2Client {
 
                 }
                 // Download video from S3
-                client.downloadVideo(filename);
+                int r = client.downloadVideo(filename);
+                if(r == 0)
+                {
+                    // Shutdown if no video
+                    System.out.println("No video to work with. Shutting down...");
+                    // Push instanceID to instance queue
+                    client.publishInstanceID();
+                    // stop self
+                    client.stopClient();
+                    return;
+                }
                 // Run darknet with video as input to darknet
                 client.runDarknet(filename);
                 // Upload results to S3

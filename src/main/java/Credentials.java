@@ -1,6 +1,6 @@
 public class Credentials {
 
-    public static String accessKey = "ASIA3HIKMVVQDPEKQOXM";
-    public static String secretKey = "T4EAFZ+N7ye8kJ9A/h3RsCmLBtOQ5E99eev2FQS8";
-    public static String sessionKey = "FwoGZXIvYXdzEM7//////////wEaDLLhsvVErt67C/CexSK/AextS4bRMMvzOAj2szMcvDcSy6M6x6AQska07P51unRZkk74q51IeopHryh6GAqrgCmikPKECJXxNKTxns+KfVw4oUtBgmdnFVyvrx3jfGHZhssgvfIzzLFo02NfcZk/6TQBgn4XdaFuhvQOe+MfODsuktGNj7Ps7hWNGsHKpfmTGVl2QagQEm4E5hms12pU+kpX7T/WIZkWvY3cPHs+ddm/Ji5y2GfDfpC/IdRwhbEwLwGhBriGzv3MI2HweRSQKMam+/MFMi1jvJMvxs+fi6q20rJf+W/CfP2oWKL0Kt0+koUgwGz5K0bqotHbGq+xpQkXmGc=";
+    public static String accessKey = "AKIAIS5RQDPX3FVQWFTA";
+    public static String secretKey = "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";
+    public static String sessionKey = "FwoGZXIvYXdzEOT//////////wEaDHDG+TAICWXFexIF5iK/AWo7Mj6A5zvaz1RfThVNdcINuwGIXxeH1OSDJ+FNUCaJPz6zFXyZWPtvjH7nANeMqqceNaneADVcyIBu+iLPhnnDvExJDCWkGsA7Kw2fSpUzHHKnhLL1LFGpYTCFWeiKeJGGzYtFB5Kp0OyU8QpHJzRpKItr6DQLfvNNETZo7eXOCvuMYqdiTy/oZAKfmbYmdlxIhHHDRqewOSqoInm8A4XNzFGP3LTxcNlLArH1iHjJcOo3Y8qMK/lcQktPeHjtKOWQgPQFMi3Yj0rVDziV2eNlRBArvp7nfn5iCHKTyjVtGwa/M1bW/m3uw5G9D7ivrBLpdAs=";
 }

@@ -4,11 +4,9 @@ import java.util.List;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
-import com.amazonaws.auth.BasicSessionCredentials;
+import com.amazonaws.auth.*;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
@@ -38,48 +36,46 @@ public class EC2Server {
     private AmazonEC2 ec2Client;
     private String ami_id;
     private String key_pair;
+    private S3Handler s3Input;
+    private S3Handler s3Output;
+    private SqsHandler sqsInputQueue;
+    private SqsHandler sqsInstanceQueue;
     private static LinkedList<String> instanceIds;
+
     public EC2Server()
     {
     	ec2Client = createEC2Client();
-    	ami_id = "ami-0903fd482d7208724";
-        key_pair = "ccproj";
+    	// This ami has client jars and darknet shell script alongwith darkent app
+    	ami_id = "ami-06a411207fb0fbcdc"; //"ami-0903fd482d7208724";
+        key_pair = "cc_proj1_latest";
 		instanceIds = new LinkedList<>();
-    	// int numofInstances = CreateInstance(ec2Client, 3, -1, ami_id, key_pair);
-        // Create 2 instances
-        // for(int i=1;i<3;i++){
-        // 	String instanceId = CreateInstance(ec2Client, i);
-        // 	ec2clientList.add(ec2Client);
-        // 	instanceIDs.add(instanceId);
-        // }
-        
-        
+		s3Input = new S3Handler(Regions.US_EAST_1, "ccproj1inputbucket");
+		s3Output = new S3Handler(Regions.US_EAST_1, "ccproj1outputbucket");
+		sqsInputQueue = new SqsHandler("inputqueue");
+		sqsInstanceQueue = new SqsHandler("instancequeue");
 
     }
 
-    public int startInstances(int count, int minCount, SqsHandler handler){
+	public void createS3Buckets()
+	{
+		s3Input.createBucket();
+		s3Output.createBucket();
+	}
 
-        return CreateInstance(count, minCount, handler);
-    }
-
+	public void createSQSQueues()
+	{
+		sqsInputQueue.createQueue();
+		sqsInstanceQueue.createQueue();
+	}
 
     public static void main(String[] args)
     {
-//        EC2Server server = new EC2Server();
-//        SqsHandler sqsHandler = new SqsHandler("instance.fifo");
-//        server.startInstance("i-0c79eea5149bc8cd9");
     	try {
 			EC2Server server = new EC2Server();
-//			AmazonEC2 ec2 = server.createEC2Client();
-			//server.CreateInstance(ec2, 1, 0);
-			SqsHandler sqsHandler = new SqsHandler("instance.fifo", "0");
-			int count = server.CreateInstance(2,1, sqsHandler);
-			System.out.println(count);
-//			Thread.sleep(60000);
-//			for(String id: instanceIds){
-//				server.stopInstance(id);
-//			}
-//			server.startInstance("i-0ef52c42544bf2479");
+			server.createS3Buckets();
+			server.createSQSQueues();
+			server.CreateInstance(1);
+
 		}
     	catch (AmazonServiceException e)
 		{
@@ -119,37 +115,27 @@ public class EC2Server {
     }
 
     public AmazonEC2 createEC2Client(){
-		BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(Credentials.accessKey,
-				Credentials.secretKey, Credentials.sessionKey);
-
-    	AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard()
-    					.withCredentials(new AWSStaticCredentialsProvider(sessionCredentials))
+//		BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(Credentials.accessKey,
+//				Credentials.secretKey, Credentials.sessionKey);
+		BasicAWSCredentials awsCredentials = new BasicAWSCredentials(Credentials.accessKey, Credentials.secretKey);
+		AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard()
+    					.withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
     					.withRegion(Regions.US_EAST_1)
     					.build();
     	return ec2;
     }
 
-    public int CreateInstance(int maxNumberInstance, int count, SqsHandler sqsHandler) throws AmazonServiceException, SdkClientException
+    public void CreateInstance(int maxNumberInstance) throws AmazonServiceException, SdkClientException
     {
     	int minInstance = maxNumberInstance -1;
     	int maxInstance = maxNumberInstance;
+    	String id;
+
     	if(minInstance == 0)
     		minInstance = 1;
-    	List<String> securityIds = new ArrayList<>();
-    	securityIds.add("*******");
-    	List<TagSpecification> tagSpecsList = new ArrayList<>();
-    	TagSpecification tagSpec = new TagSpecification();
-    	List<Tag> tagList = new ArrayList<>();
-    	Tag tag = new Tag();
-    	tag.setKey("Name");
-    	tag.setValue("EC2 - App");
-    	tagList.add(tag);
-    	tagSpec.setResourceType("instance");
-    	tagSpec.setTags(tagList);
-    	tagSpecsList.add(tagSpec);
 
     	List<String> securityGroupId = new ArrayList<>();
-    	securityGroupId.add("sg-0e8845c279230e932");
+    	securityGroupId.add("sg-0f504548d8788d95f");
         RunInstancesRequest run_request = new RunInstancesRequest()
                 .withImageId(ami_id)
                 .withInstanceType("t2.micro")
@@ -162,29 +148,29 @@ public class EC2Server {
         RunInstancesResult run_response = null;
         try{
         	run_response = ec2Client.runInstances(run_request);
-			String instanceId = run_response.getReservation().getInstances().get(0).getInstanceId();
-//			sqsHandler.SendMessage(instanceId, "1", 0);
-//			instanceIds.add(instanceId);
-//			Thread.sleep(35000);
-//			stopInstance(instanceId);
+			List<Instance> runningInstances= run_response.getReservation().getInstances();
+			for(Instance i: runningInstances)
+			{
+				id = i.getInstanceId();
+				sqsInstanceQueue.SendMessage(id, 0);
+				instanceIds.add(id);
+			}
+
+			Thread.sleep(35000);
+			System.out.println("Running instances count: " + getNumberOfInstances());
+			for(String ID: instanceIds)
+			{
+				//stopInstance(ID);
+			}
         } catch(AmazonEC2Exception amzec2Exp){
             //System.out.println("AmazonEC2Exception ");
 			amzec2Exp.printStackTrace();
-        	return count;
+
         } catch(Exception e){
             //System.out.println("General Exception ");
 			e.printStackTrace();
-        	return count;
+
         }
-        // RunInstancesResult run_response = ec2Client.runInstances(run_request);
-        // String instanceId = instanceResult.getReservation().getInstances().get(0).getInstanceId();
-        
-        //I'll associate a tag for the resource, so that we can identify resource with tag name later
-        // CreateTagsRequest createTagsRequest = new CreateTagsRequest()
-        //         .withResources(instanceId)
-        //         .withTags(new Tag("ec2client"+number, "ec2client"+number));
-        // ec2Client.createTags(createTagsRequest);
-        return maxNumberInstance;
     }
 
     public void startInstance(String instanceId){
