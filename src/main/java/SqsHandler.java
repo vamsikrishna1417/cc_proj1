@@ -83,6 +83,7 @@ public class SqsHandler {
     public void deleteMessage(Message message){
         String messageReciptHandle = message.getReceiptHandle();
         DeleteMessageRequest deleteRequest = new DeleteMessageRequest(sqsUrl, messageReciptHandle);
+//        System.out.println("Msg Body: "+message.getBody());
         sqs.deleteMessage(deleteRequest);
     }
 
@@ -126,12 +127,13 @@ public class SqsHandler {
         return messagesList.get(0);
     }
 
-    public int getApproximateMessageCount(){
+    public int  getApproximateMessageCount(){
         List<String> attributesNamesList = new ArrayList<>();
-        attributesNamesList.add("ApproxiamteNumberOfMessages");
+        attributesNamesList.add("ApproximateNumberOfMessages");
         GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest(sqsUrl, attributesNamesList);
-        Map<String, String> map = sqs.getQueueAttributes(getQueueAttributesRequest).getAttributes();
-        Integer messageCount = Integer.valueOf(map.get("ApproxiamteNumberOfMessages"));
+        Map map = sqs.getQueueAttributes(getQueueAttributesRequest).getAttributes();
+        Integer messageCount = Integer.valueOf((String)map.get("ApproximateNumberOfMessages"));
+//        System.out.println(messageCount);
         return messageCount;
     }
 }

@@ -53,7 +53,6 @@ public class EC2Server {
 		s3Output = new S3Handler(Regions.US_EAST_1, "ccproj1outputbucket");
 		sqsInputQueue = new SqsHandler("inputqueue");
 		sqsInstanceQueue = new SqsHandler("instancequeue");
-
     }
 
 	public void createS3Buckets()
@@ -70,12 +69,13 @@ public class EC2Server {
 
     public static void main(String[] args)
     {
+//		LoadBalancer loadBalancer = new LoadBalancer();
     	try {
 			EC2Server server = new EC2Server();
 			server.createS3Buckets();
 			server.createSQSQueues();
-			server.CreateInstance(1);
-
+			server.CreateInstance(3);
+			server.scaleInAndOut();
 		}
     	catch (AmazonServiceException e)
 		{
@@ -113,6 +113,59 @@ public class EC2Server {
 //            e.printStackTrace();
 //        }
     }
+
+	public void scaleInAndOut(){
+		int count=0;
+
+		while(true){
+			int messageCount = sqsInputQueue.getApproximateMessageCount();
+			int ec2ClientInstances = getNumberOfInstances()-1; //bcoz master is counted as an instance
+			if(messageCount>0 && messageCount>ec2ClientInstances){
+				int maxLimitInstances = 19 - ec2ClientInstances;
+				if(maxLimitInstances>0){
+					int messagesToBeServed = messageCount - ec2ClientInstances;
+					int countOfAvailableInstances = sqsInstanceQueue.getApproximateMessageCount();
+					if(messagesToBeServed >= maxLimitInstances){
+						while(countOfAvailableInstances != 0){
+							Message instanceId = sqsInstanceQueue.ReceiveMessage();
+							if(instanceId != null){
+								sqsInstanceQueue.deleteMessage(instanceId);
+								startInstance(instanceId.getBody());
+								countOfAvailableInstances--;
+							}else{
+								break; // No available instances.
+							}
+						}
+					}else{
+						if(messagesToBeServed >= countOfAvailableInstances){
+							while(countOfAvailableInstances != 0){
+								Message instanceId = sqsInstanceQueue.ReceiveMessage();
+								if(instanceId != null){
+									sqsInstanceQueue.deleteMessage(instanceId);
+									startInstance(instanceId.getBody());
+									countOfAvailableInstances--;
+								}else{
+									break; // No available instances
+								}
+							}
+						}else{
+							while(messagesToBeServed != 0){
+								Message instanceId = sqsInstanceQueue.ReceiveMessage();
+								sqsInstanceQueue.deleteMessage(instanceId);
+								startInstance(instanceId.getBody());
+								messagesToBeServed--;
+							}
+						}
+					}
+				}
+			}
+			try{
+				Thread.sleep(3000);
+			} catch(InterruptedException e){
+				e.printStackTrace();
+			}
+		}
+	}
 
     public AmazonEC2 createEC2Client(){
 //		BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(Credentials.accessKey,
