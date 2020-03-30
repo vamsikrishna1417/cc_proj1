@@ -74,7 +74,7 @@ public class EC2Server {
 			EC2Server server = new EC2Server();
 			server.createS3Buckets();
 			server.createSQSQueues();
-			server.CreateInstance(3);
+			server.CreateInstance(9);
 			server.scaleInAndOut();
 		}
     	catch (AmazonServiceException e)
@@ -133,7 +133,7 @@ public class EC2Server {
 								startInstance(instanceId.getBody());
 								countOfAvailableInstances--;
 							}else{
-								break; // No available instances.
+//								break; // No available instances.
 							}
 						}
 					}else{
@@ -145,7 +145,7 @@ public class EC2Server {
 									startInstance(instanceId.getBody());
 									countOfAvailableInstances--;
 								}else{
-									break; // No available instances
+//									break; // No available instances
 								}
 							}
 						}else{
